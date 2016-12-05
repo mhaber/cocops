@@ -1,5 +1,6 @@
 library(readstata13) # to load in .dta file
 library(dplyr) # data manipulation
+library(tidyr) # data manipulation
 library(paran) # parallel analysis
 library(psych) # factor / pPCA analysis
 library(MASS) # ordered probit
@@ -8,6 +9,41 @@ library(systemfit) # for seemingly unrelated regression
 # load data set
 df <- readstata13::read.dta13("data/cocops_cg_stata13.dta", convert.factors = F) 
 df$rowname <- rownames(df)
+
+# Test for Missingness Patterns for UK and PL
+varsCovered <- rowSums(!is.na(df))
+prcntCovered <- varsCovered/(ncol(df)-1)
+
+countryCoverage <- data.frame(df, prcntCovered, varsCovered)
+
+indicatorCoverage <- countryCoverage %>%
+  dplyr::select(iso3n, varsCovered, prcntCovered, everything()) %>%
+  tidyr::gather(varname, value, -c(1:3)) %>%
+  dplyr::mutate(indicator = framework$Indicator[match(varname, framework$varname)]) %>%
+  dplyr::group_by(indicator, varname) %>%
+  dplyr::summarise(coverage = 47 - sum(is.na(value))) %>%
+  dplyr::ungroup() %>%
+  group_by(indicator) %>%
+  dplyr::summarise(minCoverage = min(coverage))
+
+countryCoverage <- countryCoverage %>%
+  dplyr::select(rowname, country, varsCovered, prcntCovered, everything()) %>%
+  tidyr::gather(varname, value, -c(1:4)) %>%
+  dplyr::group_by(country, varname) %>%
+  dplyr::summarize(varsMissing = sum(is.na(value))) %>%
+  tidyr::spread(key = varname, value= varsMissing) %>%
+  dplyr::ungroup() %>%
+  dplyr::mutate(varsMissing = rowSums(.[,-1]),
+                prcntCovered = (varsMissing/ncol(df)-1) * -1)  %>%
+  dplyr::select(country, prcntCovered, varsMissing, everything())
+
+variableCoverage <- countryCoverage %>%
+  dplyr::summarise_each(funs((
+    nrow(countryCoverage) - sum(is.na(.)))))
+
+countryCoverage[max(nrow(countryCoverage)) + 1,] <- variableCoverage
+write.csv(countryCoverage, file ="data/variableCoverage.csv", row.names = F)
+write.csv(indicatorCoverage, file ="data/indicatorCoverage.csv", row.names = F)
 
 # Table 1: Performance Information use ---------------------------------------------
 
@@ -260,14 +296,34 @@ df2 <- df2 %>%dplyr::full_join(., goalClarity) %>%
   full_join(., networkComplex)
 
 # Table 3: Seemingly unrelated regression  --------------------------------
-r1 <- Internal~Bureaucrat + Manager + Networker + educat + hierach + factor(senior) +
-  factor(private) + agency + factor(size) + goalClarity + distress +  networkComplex +
-  q2_1 + q2_2 + q2_3 + q2_4 + q2_5 + q2_6 + q2_7 + q2_8 + q2_9 + q2_10 +
-  q2_11 + q2_12 + q2_13 + q2_o
-r2 <- External~Bureaucrat + Manager + Networker + educat + hierach + factor(senior) +
-  factor(private) + agency + factor(size) + goalClarity + distress +  networkComplex +
-  q2_1 + q2_2 + q2_3 + q2_4 + q2_5 + q2_6 + q2_7 + q2_8 + q2_9 + q2_10 +
-  q2_11 + q2_12 + q2_13 + q2_o
+# dftest <- df2 %>% 
+#   dplyr::select(rowname, contains("q2_")) %>% 
+#   tidyr::gather(type, value, q2_1:q2_o) %>%
+#   tidyr::separate(type, c("variable", "policy")) %>%
+#   tidyr::spread(variable, value, convert = TRUE) %>% 
+#   dplyr::filter(!policy=="o") %>% 
+#   dplyr::filter(q2==2)
+
+# Group center variables
+df2 <- df2 %>% 
+  dplyr::select(rowname, country, Internal, External, 
+                Bureaucrat, Manager, Networker, educat, hierach,
+                senior, private, agency, size, goalClarity, distress,
+                networkComplex) %>% 
+  dplyr::group_by(country) %>% 
+  dplyr::mutate_each(funs(center = .-mean(., na.rm=T)), -rowname, -educat, -hierach,
+                     -senior, -private, -agency, -size)
+  
+
+
+
+
+r1 <- Internal_center~Bureaucrat_center + Manager_center + Networker_center +
+  educat + hierach + factor(senior) +  factor(private) + agency +
+  factor(size) + goalClarity_center + distress_center +  networkComplex_center
+r2 <- External_center~Bureaucrat_center + Manager_center + Networker_center +
+  educat + hierach + factor(senior) +  factor(private) + agency +
+  factor(size) + goalClarity_center + distress_center +  networkComplex_center
 
 system <- list(internal = r1, external = r2)
 fitsur <- systemfit::systemfit(system, data=df2)
