@@ -5,27 +5,17 @@ library(paran) # parallel analysis
 library(psych) # factor / pPCA analysis
 library(MASS) # ordered probit
 library(systemfit) # for seemingly unrelated regression 
+library(stargazer) # for regression tables
 
 # load data set
 df <- readstata13::read.dta13("data/cocops_cg_stata13.dta", convert.factors = F) 
 df$rowname <- rownames(df)
 
-# Test for Missingness Patterns for UK and PL
+# Test for Missingness Patterns for certain countries
 varsCovered <- rowSums(!is.na(df))
 prcntCovered <- varsCovered/(ncol(df)-1)
 
 countryCoverage <- data.frame(df, prcntCovered, varsCovered)
-
-indicatorCoverage <- countryCoverage %>%
-  dplyr::select(iso3n, varsCovered, prcntCovered, everything()) %>%
-  tidyr::gather(varname, value, -c(1:3)) %>%
-  dplyr::mutate(indicator = framework$Indicator[match(varname, framework$varname)]) %>%
-  dplyr::group_by(indicator, varname) %>%
-  dplyr::summarise(coverage = 47 - sum(is.na(value))) %>%
-  dplyr::ungroup() %>%
-  group_by(indicator) %>%
-  dplyr::summarise(minCoverage = min(coverage))
-
 countryCoverage <- countryCoverage %>%
   dplyr::select(rowname, country, varsCovered, prcntCovered, everything()) %>%
   tidyr::gather(varname, value, -c(1:4)) %>%
@@ -33,17 +23,11 @@ countryCoverage <- countryCoverage %>%
   dplyr::summarize(varsMissing = sum(is.na(value))) %>%
   tidyr::spread(key = varname, value= varsMissing) %>%
   dplyr::ungroup() %>%
-  dplyr::mutate(varsMissing = rowSums(.[,-1]),
-                prcntCovered = (varsMissing/ncol(df)-1) * -1)  %>%
-  dplyr::select(country, prcntCovered, varsMissing, everything())
+  dplyr::mutate(varsMissing = rowSums(.[,-1])) %>%
+  dplyr::select(country,  varsMissing, everything())
 
-variableCoverage <- countryCoverage %>%
-  dplyr::summarise_each(funs((
-    nrow(countryCoverage) - sum(is.na(.)))))
-
-countryCoverage[max(nrow(countryCoverage)) + 1,] <- variableCoverage
-write.csv(countryCoverage, file ="data/variableCoverage.csv", row.names = F)
-write.csv(indicatorCoverage, file ="data/indicatorCoverage.csv", row.names = F)
+# Serbia has 27618 missing responses, twice as many as the rest, so it will be removed
+#df<- df %>% dplyr::filter(!country==8)
 
 # Table 1: Performance Information use ---------------------------------------------
 
@@ -108,100 +92,100 @@ roles <- df2 %>% dplyr::select(Manager,Networker,Bureaucrat)
 policy <- df2 %>% dplyr::select(contains("q2_"))
 country <- df2 %>% dplyr::select(country)
 
-  # Success depends on ability
-regForm <- paste("as.factor(q25_1) ~",paste(paste(names(roles),collapse="+"),
-                                            "factor(country)",
-                                            paste(names(policy),collapse="+"), sep = "+"))
-m1 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
-summary(m1)
-ctableM1 <- coef(summary(m1))
-p <- pnorm(abs(ctableM1[, "t value"]), lower.tail = FALSE) * 2
-ctableM1 <- cbind(ctableM1, "p value" = p)
-ctableM1[1:3,]
-# -->  Manager strongest relation to Success depends on ability 
-
-# Thinking up new ideas are important
-regForm <- paste("as.factor(q25_4) ~",paste(paste(names(roles),collapse="+"),
-                                             "factor(country)",
-                                             paste(names(policy),collapse="+"), sep = "+"))
-m2 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
-summary(m2)
-ctableM2 <- coef(summary(m2))
-p <- pnorm(abs(ctableM2[, "t value"]), lower.tail = FALSE) * 2
-ctableM2 <- cbind(ctableM2, "p value" = p)
-ctableM2[1:3,] 
-# -->  Networker strongest relation to Thinking up new ideas are important
-
-# Avoid upset the status quo
-regForm <- paste("as.factor(q25_5) ~",paste(paste(names(roles),collapse="+"),
-                                            "factor(country)",
-                                            paste(names(policy),collapse="+"), sep = "+"))
-m3 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
-summary(m3)
-ctablem3 <- coef(summary(m3))
-p <- pnorm(abs(ctablem3[, "t value"]), lower.tail = FALSE) * 2
-ctablem3 <- cbind(ctablem3, "p value" = p)
-ctablem3[1:3,] 
-# -->  Manager strongest relation to Avoid upset the status quo
-
-# Motivation: High Income
-regForm <- paste("as.factor(q24_2) ~",paste(paste(names(roles),collapse="+"),
-                                            "factor(country)",
-                                            paste(names(policy),collapse="+"), sep = "+"))
-m4 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
-summary(m4)
-ctablem4 <- coef(summary(m4))
-p <- pnorm(abs(ctablem4[, "t value"]), lower.tail = FALSE) * 2
-ctablem4 <- cbind(ctablem4, "p value" = p)
-ctablem4[1:3,] 
-# -->  Manager strongest relation to Motivation: High Income
-
-# Motivation: Opportunities to help others
-regForm <- paste("as.factor(q24_3) ~",paste(paste(names(roles),collapse="+"),
-                                            "factor(country)",
-                                            paste(names(policy),collapse="+"), sep = "+"))
-m5 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
-summary(m5)
-ctablem5 <- coef(summary(m5))
-p <- pnorm(abs(ctablem5[, "t value"]), lower.tail = FALSE) * 2
-ctablem5 <- cbind(ctablem5, "p value" = p)
-ctablem5[1:3,] 
-# -->  Networker and Bureaucrat strongest relation to Motivation: Opportunities to help others
-
-# Motivation: Job security
-regForm <- paste("as.factor(q24_4) ~",paste(paste(names(roles),collapse="+"),
-                                            "factor(country)",
-                                            paste(names(policy),collapse="+"), sep = "+"))
-m6 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
-summary(m6)
-ctablem6 <- coef(summary(m6))
-p <- pnorm(abs(ctablem6[, "t value"]), lower.tail = FALSE) * 2
-ctablem6 <- cbind(ctablem6, "p value" = p)
-ctablem6[1:3,] 
-# -->  Bureaucrat strongest relation to Motivation: Job security
-
-# Motivation: Room to make decisions
-regForm <- paste("as.factor(q24_5) ~",paste(paste(names(roles),collapse="+"),
-                                            "factor(country)",
-                                            paste(names(policy),collapse="+"), sep = "+"))
-m7 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
-summary(m7)
-ctablem7 <- coef(summary(m7))
-p <- pnorm(abs(ctablem7[, "t value"]), lower.tail = FALSE) * 2
-ctablem7 <- cbind(ctablem7, "p value" = p)
-ctablem7[1:3,] 
-# -->  Manager and Bureaucrat strongest relation to Motivation: Room to make decisions
-
-# Motivation: Useful for society
-regForm <- paste("as.factor(q24_7) ~",paste(paste(names(roles),collapse="+"),
-                                            "factor(country)",
-                                            paste(names(policy),collapse="+"), sep = "+"))
-m8 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
-summary(m8)
-ctablem8 <- coef(summary(m8))
-p <- pnorm(abs(ctablem8[, "t value"]), lower.tail = FALSE) * 2
-ctablem8 <- cbind(ctablem8, "p value" = p)
-ctablem8[1:3,] 
+# # Success depends on ability
+# regForm <- paste("as.factor(q25_1) ~",paste(paste(names(roles),collapse="+"),
+#                                             "factor(country)",
+#                                             paste(names(policy),collapse="+"), sep = "+"))
+# m1 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
+# summary(m1)
+# ctableM1 <- coef(summary(m1))
+# p <- pnorm(abs(ctableM1[, "t value"]), lower.tail = FALSE) * 2
+# ctableM1 <- cbind(ctableM1, "p value" = p)
+# ctableM1[1:3,]
+# # -->  Manager strongest relation to Success depends on ability 
+# 
+# # Thinking up new ideas are important
+# regForm <- paste("as.factor(q25_4) ~",paste(paste(names(roles),collapse="+"),
+#                                              "factor(country)",
+#                                              paste(names(policy),collapse="+"), sep = "+"))
+# m2 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
+# summary(m2)
+# ctableM2 <- coef(summary(m2))
+# p <- pnorm(abs(ctableM2[, "t value"]), lower.tail = FALSE) * 2
+# ctableM2 <- cbind(ctableM2, "p value" = p)
+# ctableM2[1:3,] 
+# # -->  Networker strongest relation to Thinking up new ideas are important
+# 
+# # Avoid upset the status quo
+# regForm <- paste("as.factor(q25_5) ~",paste(paste(names(roles),collapse="+"),
+#                                             "factor(country)",
+#                                             paste(names(policy),collapse="+"), sep = "+"))
+# m3 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
+# summary(m3)
+# ctablem3 <- coef(summary(m3))
+# p <- pnorm(abs(ctablem3[, "t value"]), lower.tail = FALSE) * 2
+# ctablem3 <- cbind(ctablem3, "p value" = p)
+# ctablem3[1:3,] 
+# # -->  Manager strongest relation to Avoid upset the status quo
+# 
+# # Motivation: High Income
+# regForm <- paste("as.factor(q24_2) ~",paste(paste(names(roles),collapse="+"),
+#                                             "factor(country)",
+#                                             paste(names(policy),collapse="+"), sep = "+"))
+# m4 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
+# summary(m4)
+# ctablem4 <- coef(summary(m4))
+# p <- pnorm(abs(ctablem4[, "t value"]), lower.tail = FALSE) * 2
+# ctablem4 <- cbind(ctablem4, "p value" = p)
+# ctablem4[1:3,] 
+# # -->  Manager strongest relation to Motivation: High Income
+# 
+# # Motivation: Opportunities to help others
+# regForm <- paste("as.factor(q24_3) ~",paste(paste(names(roles),collapse="+"),
+#                                             "factor(country)",
+#                                             paste(names(policy),collapse="+"), sep = "+"))
+# m5 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
+# summary(m5)
+# ctablem5 <- coef(summary(m5))
+# p <- pnorm(abs(ctablem5[, "t value"]), lower.tail = FALSE) * 2
+# ctablem5 <- cbind(ctablem5, "p value" = p)
+# ctablem5[1:3,] 
+# # -->  Networker and Bureaucrat strongest relation to Motivation: Opportunities to help others
+# 
+# # Motivation: Job security
+# regForm <- paste("as.factor(q24_4) ~",paste(paste(names(roles),collapse="+"),
+#                                             "factor(country)",
+#                                             paste(names(policy),collapse="+"), sep = "+"))
+# m6 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
+# summary(m6)
+# ctablem6 <- coef(summary(m6))
+# p <- pnorm(abs(ctablem6[, "t value"]), lower.tail = FALSE) * 2
+# ctablem6 <- cbind(ctablem6, "p value" = p)
+# ctablem6[1:3,] 
+# # -->  Bureaucrat strongest relation to Motivation: Job security
+# 
+# # Motivation: Room to make decisions
+# regForm <- paste("as.factor(q24_5) ~",paste(paste(names(roles),collapse="+"),
+#                                             "factor(country)",
+#                                             paste(names(policy),collapse="+"), sep = "+"))
+# m7 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
+# summary(m7)
+# ctablem7 <- coef(summary(m7))
+# p <- pnorm(abs(ctablem7[, "t value"]), lower.tail = FALSE) * 2
+# ctablem7 <- cbind(ctablem7, "p value" = p)
+# ctablem7[1:3,] 
+# # -->  Manager and Bureaucrat strongest relation to Motivation: Room to make decisions
+# 
+# # Motivation: Useful for society
+# regForm <- paste("as.factor(q24_7) ~",paste(paste(names(roles),collapse="+"),
+#                                             "factor(country)",
+#                                             paste(names(policy),collapse="+"), sep = "+"))
+# m8 <- MASS::polr(as.formula(regForm), data = df2, method = "probit", Hess = T)
+# summary(m8)
+# ctablem8 <- coef(summary(m8))
+# p <- pnorm(abs(ctablem8[, "t value"]), lower.tail = FALSE) * 2
+# ctablem8 <- cbind(ctablem8, "p value" = p)
+# ctablem8[1:3,] 
 # -->  Networker strongest relation to Motivation: Useful for society
 
 # Socio-demographic factors -----------------------------------------------
@@ -311,12 +295,9 @@ df2 <- df2 %>%
                 senior, private, agency, size, goalClarity, distress,
                 networkComplex) %>% 
   dplyr::group_by(country) %>% 
-  dplyr::mutate_each(funs(center = .-mean(., na.rm=T)), -rowname, -educat, -hierach,
-                     -senior, -private, -agency, -size)
-  
-
-
-
+  dplyr::mutate_each(funs(center = scale(.) %>% as.vector), -rowname, -educat, -hierach,
+                     -senior, -private, -agency, -size) %>% 
+  dplyr::ungroup()
 
 r1 <- Internal_center~Bureaucrat_center + Manager_center + Networker_center +
   educat + hierach + factor(senior) +  factor(private) + agency +
@@ -326,5 +307,8 @@ r2 <- External_center~Bureaucrat_center + Manager_center + Networker_center +
   factor(size) + goalClarity_center + distress_center +  networkComplex_center
 
 system <- list(internal = r1, external = r2)
-fitsur <- systemfit::systemfit(system, data=df2)
+fitsur <- systemfit::systemfit(system, data=df2, method="SUR")
 summary(fitsur)
+
+# save data frame
+foreign::write.dta(df2, file ="data.dta")
