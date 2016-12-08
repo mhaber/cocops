@@ -3,15 +3,15 @@ library(dplyr) # data manipulation
 library(tidyr) # data manipulation
 library(paran) # parallel analysis
 library(psych) # factor / pPCA analysis
+library(ordinal) # ordered probit mixed effects
 library(MASS) # ordered probit
 library(systemfit) # for seemingly unrelated regression 
-library(stargazer) # for regression tables
 
 # load data set
 df <- readstata13::read.dta13("data/cocops_cg_stata13.dta", convert.factors = F) 
 df$rowname <- rownames(df)
 
-# Test for Missingness Patterns for certain countries
+# Test for Missingness Patterns
 varsCovered <- rowSums(!is.na(df))
 prcntCovered <- varsCovered/(ncol(df)-1)
 
@@ -51,6 +51,16 @@ piFact
 # save scores
 piScores <- data.frame(piFact$scores)
 piScores$rowname <- rownames(piScores)
+
+# Check if it holds for every country
+piFactList <- list()
+for(i in unique(df$country)) {
+  piFactList[[i]] <- df %>% dplyr::filter(country==i) %>% 
+    factanal(~q9_1+ q9_2+ q9_3+ q9_4+ q9_5+ q9_6+ q9_7+ q9_8, factors=2, 
+             data=., rotation="promax", scores = "regression", na.action=na.exclude)
+}
+
+# does not hold for Spain, Italy, Portugal
 
 # merge with main data set
 df2 <- df %>% 
@@ -92,7 +102,11 @@ roles <- df2 %>% dplyr::select(Manager,Networker,Bureaucrat)
 policy <- df2 %>% dplyr::select(contains("q2_"))
 country <- df2 %>% dplyr::select(country)
 
-# # Success depends on ability
+# Success depends on ability
+m1 <- ordinal::clmm(as.factor(q25_1) ~ 
+       Manager+Networker+Bureaucrat + (1|country), data=df3, link = "probit")
+
+summary(m1)
 # regForm <- paste("as.factor(q25_1) ~",paste(paste(names(roles),collapse="+"),
 #                                             "factor(country)",
 #                                             paste(names(policy),collapse="+"), sep = "+"))
@@ -102,9 +116,15 @@ country <- df2 %>% dplyr::select(country)
 # p <- pnorm(abs(ctableM1[, "t value"]), lower.tail = FALSE) * 2
 # ctableM1 <- cbind(ctableM1, "p value" = p)
 # ctableM1[1:3,]
-# # -->  Manager strongest relation to Success depends on ability 
-# 
-# # Thinking up new ideas are important
+
+# -->  Manager strongest relation to Success depends on ability
+
+# Thinking up new ideas are important
+m2 <- ordinal::clmm(as.factor(q25_4) ~ 
+                      Manager+Networker+Bureaucrat + (1|country), data=df3, link = "probit")
+
+summary(m2)
+
 # regForm <- paste("as.factor(q25_4) ~",paste(paste(names(roles),collapse="+"),
 #                                              "factor(country)",
 #                                              paste(names(policy),collapse="+"), sep = "+"))
@@ -113,10 +133,16 @@ country <- df2 %>% dplyr::select(country)
 # ctableM2 <- coef(summary(m2))
 # p <- pnorm(abs(ctableM2[, "t value"]), lower.tail = FALSE) * 2
 # ctableM2 <- cbind(ctableM2, "p value" = p)
-# ctableM2[1:3,] 
-# # -->  Networker strongest relation to Thinking up new ideas are important
-# 
-# # Avoid upset the status quo
+# ctableM2[1:3,]
+
+# -->  Networker strongest relation to Thinking up new ideas are important
+
+# Avoid upset the status quo
+m3 <- ordinal::clmm(as.factor(q25_5) ~ 
+                      Manager+Networker+Bureaucrat + (1|country), data=df3, link = "probit")
+
+summary(m3)
+
 # regForm <- paste("as.factor(q25_5) ~",paste(paste(names(roles),collapse="+"),
 #                                             "factor(country)",
 #                                             paste(names(policy),collapse="+"), sep = "+"))
@@ -125,10 +151,16 @@ country <- df2 %>% dplyr::select(country)
 # ctablem3 <- coef(summary(m3))
 # p <- pnorm(abs(ctablem3[, "t value"]), lower.tail = FALSE) * 2
 # ctablem3 <- cbind(ctablem3, "p value" = p)
-# ctablem3[1:3,] 
-# # -->  Manager strongest relation to Avoid upset the status quo
-# 
-# # Motivation: High Income
+# ctablem3[1:3,]
+
+# -->  Manager strongest relation to Avoid upset the status quo
+
+# Motivation: High Income
+m4 <- ordinal::clmm(as.factor(q24_2) ~ 
+                      Manager+Networker+Bureaucrat + (1|country), data=df3, link = "probit")
+
+summary(m4)
+
 # regForm <- paste("as.factor(q24_2) ~",paste(paste(names(roles),collapse="+"),
 #                                             "factor(country)",
 #                                             paste(names(policy),collapse="+"), sep = "+"))
@@ -137,10 +169,16 @@ country <- df2 %>% dplyr::select(country)
 # ctablem4 <- coef(summary(m4))
 # p <- pnorm(abs(ctablem4[, "t value"]), lower.tail = FALSE) * 2
 # ctablem4 <- cbind(ctablem4, "p value" = p)
-# ctablem4[1:3,] 
-# # -->  Manager strongest relation to Motivation: High Income
-# 
-# # Motivation: Opportunities to help others
+# ctablem4[1:3,]
+
+# -->  Manager strongest relation to Motivation: High Income
+
+# Motivation: Opportunities to help others
+m5 <- ordinal::clmm(as.factor(q24_3) ~ 
+                      Manager+Networker+Bureaucrat + (1|country), data=df3, link = "probit")
+
+summary(m5)
+
 # regForm <- paste("as.factor(q24_3) ~",paste(paste(names(roles),collapse="+"),
 #                                             "factor(country)",
 #                                             paste(names(policy),collapse="+"), sep = "+"))
@@ -149,10 +187,15 @@ country <- df2 %>% dplyr::select(country)
 # ctablem5 <- coef(summary(m5))
 # p <- pnorm(abs(ctablem5[, "t value"]), lower.tail = FALSE) * 2
 # ctablem5 <- cbind(ctablem5, "p value" = p)
-# ctablem5[1:3,] 
-# # -->  Networker and Bureaucrat strongest relation to Motivation: Opportunities to help others
-# 
-# # Motivation: Job security
+# ctablem5[1:3,]
+# -->  Networker and Bureaucrat strongest relation to Motivation: Opportunities to help others
+
+# Motivation: Job security
+m6 <- ordinal::clmm(as.factor(q24_4) ~ 
+                      Manager+Networker+Bureaucrat + (1|country), data=df3, link = "probit")
+
+summary(m6)
+
 # regForm <- paste("as.factor(q24_4) ~",paste(paste(names(roles),collapse="+"),
 #                                             "factor(country)",
 #                                             paste(names(policy),collapse="+"), sep = "+"))
@@ -161,10 +204,16 @@ country <- df2 %>% dplyr::select(country)
 # ctablem6 <- coef(summary(m6))
 # p <- pnorm(abs(ctablem6[, "t value"]), lower.tail = FALSE) * 2
 # ctablem6 <- cbind(ctablem6, "p value" = p)
-# ctablem6[1:3,] 
-# # -->  Bureaucrat strongest relation to Motivation: Job security
-# 
-# # Motivation: Room to make decisions
+# ctablem6[1:3,]
+
+# -->  Bureaucrat strongest relation to Motivation: Job security
+
+# Motivation: Room to make decisions
+m7 <- ordinal::clmm(as.factor(q24_5) ~ 
+                      Manager+Networker+Bureaucrat + (1|country), data=df3, link = "probit")
+
+summary(m7)
+
 # regForm <- paste("as.factor(q24_5) ~",paste(paste(names(roles),collapse="+"),
 #                                             "factor(country)",
 #                                             paste(names(policy),collapse="+"), sep = "+"))
@@ -173,10 +222,16 @@ country <- df2 %>% dplyr::select(country)
 # ctablem7 <- coef(summary(m7))
 # p <- pnorm(abs(ctablem7[, "t value"]), lower.tail = FALSE) * 2
 # ctablem7 <- cbind(ctablem7, "p value" = p)
-# ctablem7[1:3,] 
-# # -->  Manager and Bureaucrat strongest relation to Motivation: Room to make decisions
-# 
-# # Motivation: Useful for society
+# ctablem7[1:3,]
+
+# -->  Manager and Bureaucrat strongest relation to Motivation: Room to make decisions
+
+# Motivation: Useful for society
+m8 <- ordinal::clmm(as.factor(q24_7) ~ 
+                      Manager+Networker+Bureaucrat + (1|country), data=df3, link = "probit")
+
+summary(m8)
+
 # regForm <- paste("as.factor(q24_7) ~",paste(paste(names(roles),collapse="+"),
 #                                             "factor(country)",
 #                                             paste(names(policy),collapse="+"), sep = "+"))
@@ -185,8 +240,9 @@ country <- df2 %>% dplyr::select(country)
 # ctablem8 <- coef(summary(m8))
 # p <- pnorm(abs(ctablem8[, "t value"]), lower.tail = FALSE) * 2
 # ctablem8 <- cbind(ctablem8, "p value" = p)
-# ctablem8[1:3,] 
-# -->  Networker strongest relation to Motivation: Useful for society
+# ctablem8[1:3,]
+
+#-->  Networker strongest relation to Motivation: Useful for society
 
 # Socio-demographic factors -----------------------------------------------
 
@@ -200,12 +256,14 @@ df2 <- df2 %>% dplyr::mutate(educat = replace(edu, edu==1, 0)) %>%
 # Seniority
 df2 <- df2 %>% dplyr::mutate(senior = replace(q30_1, q30_1 == 1, 0)) %>% 
   dplyr::mutate(senior = replace(senior, senior %in% 2:3, 1)) %>% 
-  dplyr::mutate(senior = replace(senior, senior %in% 4:5, 2))
+  dplyr::mutate(senior = replace(senior, senior %in% 4:5, 2)) %>% 
+  dplyr::mutate(senior = as.factor(senior))
 
 # Private sector job experience
 df2 <- df2 %>% dplyr::mutate(private = replace(q31_1, q31_1 %in%  1:2, 0)) %>% 
   dplyr::mutate(private = replace(private, private %in% 3:4, 1)) %>% 
-  dplyr::mutate(private = replace(private, private %in% 5:6, 2))
+  dplyr::mutate(private = replace(private, private %in% 5:6, 2)) %>% 
+  dplyr::mutate(private = as.factor(private))
 
 
 # Organizational and Contextual factors -----------------------------------------------
@@ -213,7 +271,8 @@ df2 <- df2 %>% dplyr::mutate(private = replace(q31_1, q31_1 %in%  1:2, 0)) %>%
 # Organization size
 df2 <- df2 %>% dplyr::mutate(size = replace(q3, q3 %in% 1:2, 0)) %>% 
   dplyr::mutate(size = replace(size, size %in% 3:4, 1)) %>% 
-  dplyr::mutate(size = replace(size, size %in% 5:6, 2))
+  dplyr::mutate(size = replace(size, size %in% 5:6, 2)) %>% 
+  dplyr::mutate(size = as.factor(size))
 
 # Organization type
 df2 <- df2 %>% dplyr::mutate(agency = replace(q1, q1 %in% c(1,3), 0)) %>% 
@@ -299,6 +358,11 @@ df2 <- df2 %>%
                      -senior, -private, -agency, -size) %>% 
   dplyr::ungroup()
 
+# Percentage of Missing variables
+df2 %>% 
+  dplyr::summarise_each(., funs(sum(!is.na(.))/length(.))) %>% t() %>% View()
+
+# Model Equations
 r1 <- Internal_center~Bureaucrat_center + Manager_center + Networker_center +
   educat + hierach + factor(senior) +  factor(private) + agency +
   factor(size) + goalClarity_center + distress_center +  networkComplex_center
@@ -306,6 +370,7 @@ r2 <- External_center~Bureaucrat_center + Manager_center + Networker_center +
   educat + hierach + factor(senior) +  factor(private) + agency +
   factor(size) + goalClarity_center + distress_center +  networkComplex_center
 
+# Model Estimation
 system <- list(internal = r1, external = r2)
 fitsur <- systemfit::systemfit(system, data=df2, method="SUR")
 summary(fitsur)
