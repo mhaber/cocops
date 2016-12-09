@@ -375,5 +375,9 @@ system <- list(internal = r1, external = r2)
 fitsur <- systemfit::systemfit(system, data=df2, method="SUR")
 summary(fitsur)
 
+# Postestimation
+restriction <- "internal_goalClarity_center - external_goalClarity_center"
+linearHypothesis(fitsur, restriction, test = "Chisq")
+
 # save data frame
 foreign::write.dta(df2, file ="data.dta")
