@@ -1,0 +1,128 @@
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<table cellspacing="0" align="center" style="border: none;">
+<caption align="bottom" style="margin-top:0.3em;">Statistical models</caption>
+<tr>
+<th style="text-align: left; border-top: 2px solid black; border-bottom: 1px solid black; padding-right: 12px;"><b></b></th>
+<th style="text-align: left; border-top: 2px solid black; border-bottom: 1px solid black; padding-right: 12px;"><b>internal</b></th>
+<th style="text-align: left; border-top: 2px solid black; border-bottom: 1px solid black; padding-right: 12px;"><b>external</b></th>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;">Constant</td>
+<td style="padding-right: 12px; border: none;">-0.180<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">-0.036</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;"></td>
+<td style="padding-right: 12px; border: none;">(0.038)</td>
+<td style="padding-right: 12px; border: none;">(0.039)</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;">Role: Bureaucrat</td>
+<td style="padding-right: 12px; border: none;">0.021</td>
+<td style="padding-right: 12px; border: none;">0.090<sup style="vertical-align: 0px;">***</sup></td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;"></td>
+<td style="padding-right: 12px; border: none;">(0.015)</td>
+<td style="padding-right: 12px; border: none;">(0.016)</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;">Role: Manager</td>
+<td style="padding-right: 12px; border: none;">0.120<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">-0.009</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;"></td>
+<td style="padding-right: 12px; border: none;">(0.015)</td>
+<td style="padding-right: 12px; border: none;">(0.016)</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;">Role: Networker</td>
+<td style="padding-right: 12px; border: none;">-0.042<sup style="vertical-align: 0px;">**</sup></td>
+<td style="padding-right: 12px; border: none;">0.213<sup style="vertical-align: 0px;">***</sup></td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;"></td>
+<td style="padding-right: 12px; border: none;">(0.015)</td>
+<td style="padding-right: 12px; border: none;">(0.016)</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;">Private sector exp.: 1-10 years</td>
+<td style="padding-right: 12px; border: none;">0.029</td>
+<td style="padding-right: 12px; border: none;">0.046</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;"></td>
+<td style="padding-right: 12px; border: none;">(0.030)</td>
+<td style="padding-right: 12px; border: none;">(0.030)</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;">Private sector exp.: 10+ years</td>
+<td style="padding-right: 12px; border: none;">0.073</td>
+<td style="padding-right: 12px; border: none;">0.058</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;"></td>
+<td style="padding-right: 12px; border: none;">(0.047)</td>
+<td style="padding-right: 12px; border: none;">(0.048)</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;">Agency</td>
+<td style="padding-right: 12px; border: none;">0.105<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">0.043</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;"></td>
+<td style="padding-right: 12px; border: none;">(0.029)</td>
+<td style="padding-right: 12px; border: none;">(0.030)</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;">Size: 100-999</td>
+<td style="padding-right: 12px; border: none;">0.104<sup style="vertical-align: 0px;">**</sup></td>
+<td style="padding-right: 12px; border: none;">-0.030</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;"></td>
+<td style="padding-right: 12px; border: none;">(0.036)</td>
+<td style="padding-right: 12px; border: none;">(0.037)</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;">Size: Over 1000</td>
+<td style="padding-right: 12px; border: none;">0.194<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">-0.032</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;"></td>
+<td style="padding-right: 12px; border: none;">(0.040)</td>
+<td style="padding-right: 12px; border: none;">(0.041)</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;">Goal clarity</td>
+<td style="padding-right: 12px; border: none;">0.178<sup style="vertical-align: 0px;">***</sup></td>
+<td style="padding-right: 12px; border: none;">0.049<sup style="vertical-align: 0px;">***</sup></td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;"></td>
+<td style="padding-right: 12px; border: none;">(0.015)</td>
+<td style="padding-right: 12px; border: none;">(0.015)</td>
+</tr>
+<tr>
+<td style="border-top: 1px solid black;">R<sup style="vertical-align: 0px;">2</sup></td>
+<td style="border-top: 1px solid black;">0.070</td>
+<td style="border-top: 1px solid black;">0.047</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;">Adj. R<sup style="vertical-align: 0px;">2</sup></td>
+<td style="padding-right: 12px; border: none;">0.069</td>
+<td style="padding-right: 12px; border: none;">0.045</td>
+</tr>
+<tr>
+<td style="border-bottom: 2px solid black;">Num. obs.</td>
+<td style="border-bottom: 2px solid black;">7247</td>
+<td style="border-bottom: 2px solid black;">7247</td>
+</tr>
+<tr>
+<td style="padding-right: 12px; border: none;" colspan="4"><span style="font-size:0.8em"><sup style="vertical-align: 0px;">***</sup>p &lt; 0.001, <sup style="vertical-align: 0px;">**</sup>p &lt; 0.01, <sup style="vertical-align: 0px;">*</sup>p &lt; 0.05</span></td>
+</tr>
+</table>

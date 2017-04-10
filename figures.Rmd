@@ -1,0 +1,23 @@
+---
+title: "Figures"
+author: "Matthias Haber"
+date: "10 April 2017"
+output: word_document
+---
+
+```{r setup, include=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r packages}
+library(ggplot2)
+library(Cairo)
+library(coefplot)
+```
+
+## Coefplot
+
+```{r coefplot, fig.width=8, fig.height=4, dev='CairoPNG'}
+load("coefFigure.RData")
+coefFigure
+```
