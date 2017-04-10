@@ -6,6 +6,9 @@ library(psych) # factor / pPCA analysis
 library(ordinal) # ordered probit mixed effects
 library(MASS) # ordered probit
 library(systemfit) # for seemingly unrelated regression 
+library(texreg) # for tables
+library(coefplot) # for coef plot
+library(ggplot2) # for figures
 
 # load data set
 df <- readstata13::read.dta13("data/cocops_cg_stata13.dta", convert.factors = F) 
@@ -350,12 +353,13 @@ df2 <- df2 %>%dplyr::full_join(., goalClarity) %>%
 # Group center variables
 df2 <- df2 %>% 
   dplyr::select(rowname, country, Internal, External, 
-                Bureaucrat, Manager, Networker, educat, hierach,
-                senior, private, agency, size, goalClarity, distress,
-                networkComplex) %>% 
+                Bureaucrat, Manager, Networker, private, agency, size, 
+                #educat, hierach, senior, distress, networkComplex
+                goalClarity) %>% 
   dplyr::group_by(country) %>% 
-  dplyr::mutate_each(funs(center = scale(.) %>% as.vector), -rowname, -educat, -hierach,
-                     -senior, -private, -agency, -size) %>% 
+  dplyr::mutate_each(funs(center = scale(.) %>% as.vector), -rowname, 
+                     #-educat, -hierach, -senior, 
+                     -private, -agency, -size) %>% 
   dplyr::ungroup()
 
 # Percentage of Missing variables
@@ -363,21 +367,72 @@ df2 %>%
   dplyr::summarise_each(., funs(sum(!is.na(.))/length(.))) %>% t() %>% View()
 
 # Model Equations
-r1 <- Internal_center~Bureaucrat_center + Manager_center + Networker_center +
-  educat + hierach + factor(senior) +  factor(private) + agency +
-  factor(size) + goalClarity_center + distress_center +  networkComplex_center
-r2 <- External_center~Bureaucrat_center + Manager_center + Networker_center +
-  educat + hierach + factor(senior) +  factor(private) + agency +
-  factor(size) + goalClarity_center + distress_center +  networkComplex_center
+
+r1 <- Internal_center~Bureaucrat_center + Manager_center + Networker_center + 
+  factor(private) + agency + factor(size) + goalClarity_center
+r2 <- External_center~Bureaucrat_center + Manager_center + Networker_center + 
+  factor(private) + agency + factor(size) + goalClarity_center
+
 
 # Model Estimation
-system <- list(internal = r1, external = r2)
+system <- list(internal = r1,
+                       external = r2)
 fitsur <- systemfit::systemfit(system, data=df2, method="SUR")
-summary(fitsur)
 
-# Postestimation
-restriction <- "internal_goalClarity_center - external_goalClarity_center"
-linearHypothesis(fitsur, restriction, test = "Chisq")
+
+## Postestimation
+
+# Waldt Tests
+restriction1 <- "external_Bureaucrat_center - external_Networker_center"
+linearHypothesis(fitsur, restriction1, test = "Chisq")
+
+restriction2 <- "internal_goalClarity_center - external_goalClarity_center"
+linearHypothesis(fitsur, restriction2, test = "Chisq")
 
 # save data frame
 foreign::write.dta(df2, file ="data.dta")
+
+# Figures
+coefFigure <- coefplot::multiplot(fitsur$eq[[1]], fitsur$eq[[2]],
+                    single = F, title = "",
+                    xlab = "", ylab = "", 
+                    decreasing = T,
+                    legend.position = "none", 
+                    names = c("Internal", "External"),
+                    newNames = c(`(Intercept)`="Constant", 
+                                 Bureaucrat_center="Role: Bureaucrat",
+                                 Manager_center="Role: Manager",
+                                 Networker_center="Role: Networker",
+                                 `factor(private)1`="Private sector exp.: 1-10 years",
+                                 `factor(private)2`="Private sector exp.: 10+ years",
+                                 agency = "Agency",
+                                 `factor(size)1`="Size: 100-999",
+                                 `factor(size)2`="Size: Over 1000",
+                                 goalClarity_center="Goal clarity"))
+coefFigure <- coefFigure + 
+  ggplot2::scale_color_manual(values=c("black","black"))
+save(coefFigure, file = "coefFigure.RData")
+ggsave(coefFigure, filename = "coefFigure.png", 
+       width = 10, height = 6)
+
+# Tables
+texreg::htmlreg(list(fitsur),
+                beside = T, digits = 3,
+                custom.coef.names = c("Constant", 
+                                      "Role: Bureaucrat",
+                                      "Role: Manager",
+                                      "Role: Networker",
+                                      #"Education: MA or higher",
+                                      #"Top hierachical level",
+                                      #"Seniority: 1-10 years",
+                                      #"Seniority: 10+ years",
+                                      "Private sector exp.: 1-10 years",
+                                      "Private sector exp.: 10+ years",
+                                      "Agency",
+                                      "Size: 100-999",
+                                      "Size: Over 1000",
+                                      "Goal clarity"
+                                      #,"Financial distress",
+                                      #"Network complexity"
+                                      ),
+                file = "regressionTable.doc")
